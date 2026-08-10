@@ -9,7 +9,7 @@ export async function POST(request) {
       await request.json();
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash-lite',
       contents: `以下の天気条件について外出のための実用的なアドバイスを日本語で100文字程度で回答してください。服装・持ち物・注意点を含めてください。
 
 都市: ${cityName}
@@ -27,6 +27,16 @@ export async function POST(request) {
 
     return NextResponse.json({ advice: response.text });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const msg = e.message ?? '';
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+      return NextResponse.json(
+        { error: 'APIの利用制限に達しました。しばらくしてからお試しください。' },
+        { status: 429 }
+      );
+    }
+    return NextResponse.json(
+      { error: 'AIアドバイスの取得に失敗しました。' },
+      { status: 500 }
+    );
   }
 }

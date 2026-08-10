@@ -70,6 +70,7 @@ export default function Home() {
   const [selectedDay, setSelectedDay]   = useState(0);
   const [localTime, setLocalTime]       = useState('');
   const [advice, setAdvice]             = useState('');
+  const [adviceError, setAdviceError]   = useState('');
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [favorites, setFavorites]       = useState([]);
   const debounceRef = useRef(null);
@@ -155,6 +156,7 @@ export default function Home() {
     setError(null);
     setWeather(null);
     setAdvice('');
+    setAdviceError('');
     setActiveWeek(0);
     setSelectedDay(0);
 
@@ -174,6 +176,7 @@ export default function Home() {
     if (!detailDay || !city) return;
     setAdviceLoading(true);
     setAdvice('');
+    setAdviceError('');
     try {
       const res = await fetch('/api/ai-advice', {
         method: 'POST',
@@ -192,7 +195,7 @@ export default function Home() {
       if (data.error) throw new Error(data.error);
       setAdvice(data.advice);
     } catch (e) {
-      setAdvice(`エラー: ${e.message}`);
+      setAdviceError(e.message || 'AIアドバイスの取得に失敗しました。');
     } finally {
       setAdviceLoading(false);
     }
@@ -362,7 +365,7 @@ export default function Home() {
             {['今週', '来週'].map((label, i) => (
               <button
                 key={i}
-                onClick={() => { setActiveWeek(i); setSelectedDay(0); setAdvice(''); }}
+                onClick={() => { setActiveWeek(i); setSelectedDay(0); setAdvice(''); setAdviceError(''); }}
                 className={`flex-1 py-2 rounded-xl text-xs font-medium tracking-wider transition-all duration-200 ${
                   activeWeek === i
                     ? 'bg-sky-500/10 text-sky-300 border border-sky-500/25'
@@ -386,7 +389,7 @@ export default function Home() {
                 return (
                   <button
                     key={i}
-                    onClick={() => { setSelectedDay(i); setAdvice(''); }}
+                    onClick={() => { setSelectedDay(i); setAdvice(''); setAdviceError(''); }}
                     className={`flex flex-col items-center gap-1.5 py-2.5 px-0.5 rounded-xl transition-all duration-150 ${
                       isSelected
                         ? 'bg-sky-500/12 border border-sky-500/20'
@@ -451,7 +454,7 @@ export default function Home() {
               </div>
 
               {/* AI相談ボタン */}
-              {!advice && !adviceLoading && (
+              {!advice && !adviceError && !adviceLoading && (
                 <button
                   onClick={fetchAdvice}
                   className="w-full py-3 rounded-xl text-xs font-medium text-slate-500 border border-white/[0.07] hover:bg-white/5 hover:text-sky-300 hover:border-sky-500/20 active:bg-white/10 transition-all duration-200 flex items-center justify-center gap-2"
@@ -466,6 +469,22 @@ export default function Home() {
                 <div className="flex items-center justify-center gap-2 py-3">
                   <i className="fa-solid fa-spinner fa-spin text-sky-400 text-xs" />
                   <span className="text-xs text-slate-500">Gemini が考えています...</span>
+                </div>
+              )}
+
+              {/* AIエラー */}
+              {adviceError && (
+                <div className="flex items-start gap-2 py-2">
+                  <i className="fa-solid fa-circle-exclamation text-slate-600 text-xs mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-slate-500">{adviceError}</p>
+                    <button
+                      onClick={() => setAdviceError('')}
+                      className="mt-1.5 text-[10px] text-slate-700 hover:text-slate-500 transition-colors"
+                    >
+                      再試行
+                    </button>
+                  </div>
                 </div>
               )}
 
