@@ -9,7 +9,7 @@ export async function POST(request) {
       await request.json();
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-2.5-flash',
       contents: `以下の天気条件について外出のための実用的なアドバイスを日本語で100文字程度で回答してください。服装・持ち物・注意点を含めてください。
 
 都市: ${cityName}
@@ -34,7 +34,9 @@ export async function POST(request) {
         { status: 429 }
       );
     }
-    // 実際のエラーをそのまま返す（原因特定後に汎用メッセージに戻す）
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: 'AIアドバイスの取得に失敗しました。' },
+      { status: 500 }
+    );
   }
 }
