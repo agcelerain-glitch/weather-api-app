@@ -34,9 +34,7 @@ export async function POST(request) {
         { status: 429 }
       );
     }
-    return NextResponse.json(
-      { error: 'AIアドバイスの取得に失敗しました。' },
-      { status: 500 }
-    );
+    // 実際のエラーをそのまま返す（原因特定後に汎用メッセージに戻す）
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
