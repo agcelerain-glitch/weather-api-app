@@ -27,31 +27,28 @@ export async function GET(request) {
     );
     let days = batch1.data || [];
 
-    // 1回目で 10件取得、14件に満たない場合は次ページを取得
     if (days.length < 14 && batch1.next) {
       try {
         const batch2 = await fetchPage(batch1.next);
         days = [...days, ...(batch2.data || [])];
       } catch {
-        // 部分データのまま続行
+        // 部分データで続行
       }
     }
 
-    const result = days.slice(0, 14).map((d) => ({
-      dt: d.dt,
-      temp: {
-        max: d.temp.max,
-        min: d.temp.min,
-        day: d.temp.day,
-      },
-      humidity: d.humidity,
-      pop: d.pop ?? 0,
-      description: d.weather?.[0]?.description ?? '',
-      icon: d.weather?.[0]?.icon ?? '01d',
-      uvi: d.uvi ?? 0,
-    }));
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      timezone: batch1.timezone,
+      timezone_offset: batch1.timezone_offset,
+      days: days.slice(0, 14).map((d) => ({
+        dt: d.dt,
+        temp: { max: d.temp.max, min: d.temp.min, day: d.temp.day },
+        humidity: d.humidity,
+        pop: d.pop ?? 0,
+        description: d.weather?.[0]?.description ?? '',
+        icon: d.weather?.[0]?.icon ?? '01d',
+        uvi: d.uvi ?? 0,
+      })),
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
