@@ -13,7 +13,7 @@ export async function POST(request) {
     const generatePromise = ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `以下の天気条件について外出のための実用的なアドバイスを日本語で200文字程度で回答してください。
-回答は必ず冒頭に「【${cityName}・${date}】」と明記してから、服装・持ち物・注意点を具体的に記述してください。
+回答は必ず「【${cityName}・${date}】」から始め、その後に服装・持ち物・注意点を自然な文章で記述してください。
 
 都市: ${cityName}
 日付: ${date}
@@ -23,8 +23,10 @@ export async function POST(request) {
 降水確率: ${pop}%`,
       config: {
         systemInstruction:
-          '天気に基づいた外出アドバイスを日本語で提供するアシスタントです。必ず冒頭に都市名と日付を【】で明記し、服装・持ち物・注意点を実用的かつ具体的にまとめてください。',
-        maxOutputTokens: 512,
+          '天気に基づいた外出アドバイスを日本語で提供するアシスタントです。' +
+          '必ず冒頭に【都市名・日付】を明記し、服装・持ち物・注意点を続けて自然な日本語の文章で200文字程度にまとめてください。' +
+          'markdownの記号（**、##、- など）は一切使わず、プレーンテキストのみで回答してください。',
+        maxOutputTokens: 1024,
       },
     });
 
