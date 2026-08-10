@@ -18,7 +18,7 @@ OpenWeather One Call API 4.0 を使った 2 週間天気予報アプリです。
 | フレームワーク | Next.js 15 (App Router) |
 | UI | Tailwind CSS 3 / Font Awesome 6 |
 | 天気 API | OpenWeather One Call API 4.0 |
-| AI | Google Gemini 2.0 Flash |
+| AI | Google Gemini 2.5 Flash |
 | デプロイ | Vercel |
 
 ## ディレクトリ構成
@@ -26,6 +26,7 @@ OpenWeather One Call API 4.0 を使った 2 週間天気予報アプリです。
 ```
 weather_webapp_01/
 ├── front/                        # Next.js アプリ
+│   ├── middleware.js             # API レート制限（スライディングウィンドウ）
 │   ├── app/
 │   │   ├── layout.jsx            # ルートレイアウト・favicon 設定
 │   │   ├── globals.css           # グローバルスタイル
@@ -81,6 +82,53 @@ npm run dev
 OPENWEATHER_API_KEY=your_openweather_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
+
+## API レート制限
+
+`front/middleware.js` にスライディングウィンドウ方式のレート制限を実装しています。APIキーの不正利用・過剰消費を防ぎます。
+
+### 制限値
+
+| エンドポイント | 制限 | 超過時 |
+|---|---|---|
+| `/api/ai-advice` | **5 回 / 分** | 429 + `Retry-After` ヘッダー |
+| `/api/weather` | 30 回 / 分 | 429 + `Retry-After` ヘッダー |
+| `/api/geocode` | 30 回 / 分 | 429 + `Retry-After` ヘッダー |
+
+### 仕組み
+
+```
+リクエスト受信
+  ↓
+IP アドレスを取得（x-forwarded-for / x-real-ip）
+  ↓
+過去 60 秒以内のリクエスト数をカウント
+  ↓
+制限以内 → そのまま通過
+制限超過 → 429 エラーを返す（API ルートには到達しない）
+```
+
+### 制限値の変更
+
+`front/middleware.js` の `RULES` オブジェクトを編集します：
+
+```js
+const RULES = {
+  '/api/ai-advice': { max: 5,  windowMs: 60_000 },  // max: 回数, windowMs: ミリ秒
+  '/api/weather':   { max: 30, windowMs: 60_000 },
+  '/api/geocode':   { max: 30, windowMs: 60_000 },
+};
+```
+
+### 本番環境向けの強化（任意）
+
+現在の実装は**インメモリ**のため、Vercel のサーバーレス環境では複数インスタンス間で状態が共有されません。より厳密な制限が必要な場合は [Upstash Redis](https://upstash.com/) との連携を推奨します。
+
+```bash
+npm install @upstash/ratelimit @upstash/redis
+```
+
+Vercel Marketplace から Upstash を追加すると環境変数が自動設定されます。
 
 ## 追加実装予定
 
